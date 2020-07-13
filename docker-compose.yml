@@ -1,0 +1,62 @@
+version: '3'
+services:
+
+ football-eureka:
+  build: ./football-eureka
+  ports:
+   - "8761:8761"
+  tty:
+    true
+  restart:
+    unless-stopped
+
+ football-config-server:
+  build: ./football-config-server
+  depends_on:
+    - football-eureka
+  ports:
+   - "8888:8888"
+  environment:
+    - EUREKA_SERVER=http://football-eureka:8761/eureka/
+    - GIT_REPO_FILE_PATH=https://github.com/kundanrecbki/football-service-config-repo
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ football-service:
+  build: ./football-service
+  depends_on:
+    - football-eureka
+    - football-config-server
+  ports:
+   - "8080:8080"
+  environment:
+    - EUREKA_SERVER=http://football-eureka:8761/eureka/
+    - CONFIG_SERVER=http://football-config-server:8888/
+    - ZIPKIN_SERVER=http://zipkin:9411/
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ football-gateway:
+  build: ./football-gateway
+  ports:
+   - "8765:8765"
+  environment:
+    - EUREKA_SERVER=http://football-eureka:8761/eureka/
+    - ZIPKIN_SERVER=http://zipkin:9411/
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ zipkin:
+  build: ./ZipkinServer
+  ports:
+   - "9411:9411"
+  tty:
+    true
+  restart:
+    unless-stopped
